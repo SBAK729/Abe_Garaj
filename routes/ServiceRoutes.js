@@ -5,7 +5,7 @@ import {
   getService,
   updateService,
   deleteService,
-} from "./../controllers/serviceConrollers.js";
+} from "../controllers/serviceConrollers.js";
 
 const router = express.Router();
 
