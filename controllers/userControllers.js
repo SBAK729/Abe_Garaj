@@ -125,3 +125,15 @@ export const me = async (req, res, next) => {
 
   next();
 };
+
+export const getAllEmployee = async (req, res, next) => {
+  const employee = await User.find({ role: "employee" });
+
+  res.status(200).json({
+    status: "success",
+    result: employee.length,
+    data: {
+      employee,
+    },
+  });
+};

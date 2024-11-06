@@ -349,6 +349,15 @@
             POST /api/employee HTTP/1.1
             Content-Type: application/json 
             Host: localhost:8080 
+              {
+              "customer_email": "test@test.com",
+              "customer_phone_number": "555-555-5555",
+              "customer_first_name": "Test",
+              "customer_last_name": "Test",
+              "customer_hash": "khsdgfkujhkjnfdfg7763hdff",
+              "active_customer_status": 1,
+              "customer_added_date": "2016-11-28T14:10:11.338Z"
+            }
             {
               "employee_email": "test@test.com",
               "employee_first_name": "Test",

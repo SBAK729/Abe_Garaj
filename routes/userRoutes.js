@@ -8,6 +8,7 @@ import {
   updateMe,
   deleteMe,
   me,
+  getAllEmployee,
 } from "./../controllers/userControllers.js";
 import {
   login,
@@ -32,7 +33,9 @@ router.route("/updateMe").post(protect, updateMe);
 router.route("/deleteMe").patch(protect, deleteMe);
 router.route("/me").get(protect, me, getUser);
 
-router.route("/").post(createUser).get(getAllUsers);
+router.route("/getAllEmployee").get(getAllEmployee);
+
+router.route("/").post(restrictTo("admin"), createUser).get(getAllUsers);
 router.route("/:id").get(getUser).patch(updateUser).delete(deleteUser);
 
 export default router;

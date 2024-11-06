@@ -8,6 +8,8 @@ router
   .post(vehicleControllers.createVehicle)
   .get(vehicleControllers.getAllVehicles);
 
+router.route("/:customer").get(vehicleControllers.getVehiclePerCustomer);
+
 router
   .route("/:id")
   .get(vehicleControllers.getVehicle)

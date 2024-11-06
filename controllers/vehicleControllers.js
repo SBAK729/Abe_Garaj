@@ -97,6 +97,18 @@ const vehicleControllers = {
       },
     });
   },
+
+  getVehiclePerCustomer: async (req, res, next) => {
+    const vehicles = await Vehicle.find({ customer: req.params.customer });
+
+    res.status(200).json({
+      status: "success",
+      result: vehicles.length,
+      data: {
+        vehicles,
+      },
+    });
+  },
 };
 
 export default vehicleControllers;
