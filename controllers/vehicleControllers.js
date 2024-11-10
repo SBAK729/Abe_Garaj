@@ -2,8 +2,11 @@ import Vehicle from "../models/vehicleModel.js";
 import User from "../models/userModel.js";
 import APIFeatures from "../utils/apiFeatures.js";
 
+import AppError from "../utils/appError.js";
+import { catchAsync } from "../utils/catchAsync.js";
+
 const vehicleControllers = {
-  createVehicle: async (req, res, next) => {
+  createVehicle: catchAsync(async (req, res, next) => {
     const vehicle = await Vehicle.create(req.body);
 
     res.status(200).json({
@@ -14,9 +17,9 @@ const vehicleControllers = {
     });
 
     next();
-  },
+  }),
 
-  getAllVehicles: async (req, res, next) => {
+  getAllVehicles: catchAsync(async (req, res, next) => {
     const Features = new APIFeatures(Vehicle.find(), req.query)
       .filter()
       .sort()
@@ -36,13 +39,17 @@ const vehicleControllers = {
     });
 
     next();
-  },
+  }),
 
-  getVehicle: async (req, res, next) => {
+  getVehicle: catchAsync(async (req, res, next) => {
     const vehicle = await Vehicle.findById(req.params.id).populate(
       "customer",
       "-_id first_name last_name email"
     );
+
+    if (!vehicle) {
+      return next(new AppError("No Document found by this ID!", 400));
+    }
 
     res.status(200).json({
       status: "success",
@@ -52,9 +59,9 @@ const vehicleControllers = {
     });
 
     next();
-  },
+  }),
 
-  updateVehicle: async (req, res, next) => {
+  updateVehicle: catchAsync(async (req, res, next) => {
     const vehicle = await Vehicle.findByIdAndUpdate(
       req.params.id,
       {
@@ -64,6 +71,10 @@ const vehicleControllers = {
       { new: true, runValidators: true }
     );
 
+    if (!vehicle) {
+      return next(new AppError("No Document found by this ID!", 400));
+    }
+
     res.status(200).json({
       status: "success",
       data: {
@@ -72,9 +83,9 @@ const vehicleControllers = {
     });
 
     next();
-  },
+  }),
 
-  changeOwnership: async (req, res, next) => {
+  changeOwnership: catchAsync(async (req, res, next) => {
     const user = await User.findById(req.body.customer);
 
     if (!user) {
@@ -96,9 +107,9 @@ const vehicleControllers = {
         vehicle,
       },
     });
-  },
+  }),
 
-  getVehiclePerCustomer: async (req, res, next) => {
+  getVehiclePerCustomer: catchAsync(async (req, res, next) => {
     const vehicles = await Vehicle.find({ customer: req.params.customer });
 
     res.status(200).json({
@@ -108,7 +119,7 @@ const vehicleControllers = {
         vehicles,
       },
     });
-  },
+  }),
 };
 
 export default vehicleControllers;

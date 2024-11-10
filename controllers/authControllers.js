@@ -4,13 +4,16 @@ import jwt from "jsonwebtoken";
 import { promisify } from "util";
 import nodeMailer from "nodemailer";
 
+import AppError from "../utils/appError.js";
+import { catchAsync } from "../utils/catchAsync.js";
+
 const createToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET_KEY, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 };
 
-export const signUp = async (req, res, next) => {
+export const signUp = catchAsync(async (req, res, next) => {
   let user = await User.create({
     first_name: req.body.first_name,
     last_name: req.body.last_name,
@@ -32,22 +35,24 @@ export const signUp = async (req, res, next) => {
       user,
     },
   });
-};
+});
 
-export const login = async (req, res, next) => {
+export const login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    console.log("Please provide valid email and password!");
+    return next(new AppError("Please provide email and password!!", 400));
   }
 
   const user = await User.findOne({ email }).select("+password");
 
   if (!user || !(await user.correctPassword(password, user.password))) {
-    return res.status(400).json({
-      status: "fail",
-      message: "email or password is incorrect!",
-    });
+    return next(
+      new AppError(
+        "Incorrect Email or Password, please Provide correct one.",
+        401
+      )
+    );
   }
 
   const token = createToken(user._id);
@@ -59,9 +64,9 @@ export const login = async (req, res, next) => {
   });
 
   next();
-};
+});
 
-export const protect = async (req, res, next) => {
+export const protect = catchAsync(async (req, res, next) => {
   //1) check if the token is exist and valid
   let token;
   if (
@@ -72,7 +77,7 @@ export const protect = async (req, res, next) => {
   }
 
   if (!token) {
-    console.log("You are not loged in, login to access!");
+    return next(new AppError("You are not loged in, login to access!", 401));
   }
   //2) verification token
   const decode = await promisify(jwt.verify)(token, process.env.JWT_SECRET_KEY);
@@ -80,44 +85,49 @@ export const protect = async (req, res, next) => {
 
   const user = await User.findOne({ _id: decode.id });
 
-  if (!user) console.log("The user belong to this token is not exist!");
+  if (!user) {
+    return next(
+      new AppError("The user belonging to this token does not exist.", 401)
+    );
+  }
 
   //4) check if user changed password after token was issued
   if (user.passwordChangedAfter(decode.iat)) {
-    return res.status(401).json({
-      status: "fail",
-      message: "You have changed password recently, login again!",
-    });
+    return next(
+      new AppError(
+        "The password is recently changed, please log in again!",
+        401
+      )
+    );
   }
   // GRANT ACCESS TO PROTECTED ROUTE
 
   req.user = user;
 
   next();
-};
+});
 
 export const restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      return res.status(401).json({
-        status: "Unauthorized",
-        message: "You do not have permission to access!!",
-      });
+      return next(
+        new AppError(
+          "You do not have permission to perform this activity!",
+          401
+        )
+      );
     }
 
     next();
   };
 };
 
-export const forgotPassword = async (req, res, next) => {
+export const forgotPassword = catchAsync(async (req, res, next) => {
   // Find the user based on email
   const user = await User.findOne({ email: req.body.email });
 
   if (!user) {
-    return res.status(400).json({
-      status: "fail",
-      message: "You do not have an account with this email",
-    });
+    return next(new AppError("There is no user with this email address!", 404));
   }
 
   // Generate the reset token
@@ -165,14 +175,16 @@ export const forgotPassword = async (req, res, next) => {
     await user.save({ validateBeforeSave: false });
 
     console.log(err);
-    return res.status(400).json({
-      status: "fail",
-      message: "Error during sending email!",
-    });
+    return next(
+      new AppError(
+        "There is an error sending the email!, please try again latar!",
+        500
+      )
+    );
   }
-};
+});
 
-export const resetPassword = async (req, res, next) => {
+export const resetPassword = catchAsync(async (req, res, next) => {
   const resetToken = crypto
     .createHash("sha256")
     .update(req.params.resetToken)
@@ -186,10 +198,9 @@ export const resetPassword = async (req, res, next) => {
   console.log(user);
 
   if (!user) {
-    return res.status(400).json({
-      status: "fail",
-      message: "This is invalid token or password reset token expired!",
-    });
+    return next(
+      new AppError("This token is invalid or expired, please try again!", 400)
+    );
   }
 
   user.password = req.body.password;
@@ -208,15 +219,12 @@ export const resetPassword = async (req, res, next) => {
   });
 
   next();
-};
+});
 
-export const updateMypassword = async (req, res, next) => {
+export const updateMypassword = catchAsync(async (req, res, next) => {
   const user = await User.findOne({ _id: req.user._id }).select("+password");
   if (!(await user.correctPassword(req.body.current_password, user.password))) {
-    return res.status(400).json({
-      status: "fail",
-      message: "You provid wronge password, please try again!",
-    });
+    return next(new AppError("Your current password is not correct!", 401));
   }
 
   user.password = req.body.new_password;
@@ -233,4 +241,4 @@ export const updateMypassword = async (req, res, next) => {
   });
 
   next();
-};
+});

@@ -1,7 +1,10 @@
 import express from "express";
 import orderControllers from "./../controllers/orderControllers.js";
+import { protect, restrictTo } from "../controllers/authControllers.js";
 
 const router = express.Router();
+
+router.use(protect, restrictTo("admin ", "employee"));
 
 router
   .route("/")

@@ -1,19 +1,24 @@
 import express from "express";
 import vehicleControllers from "./../controllers/vehicleControllers.js";
+import { protect, restrictTo } from "./../controllers/authControllers.js";
 
 const router = express.Router();
 
+router.use(protect);
+
 router
   .route("/")
-  .post(vehicleControllers.createVehicle)
-  .get(vehicleControllers.getAllVehicles);
+  .post(restrictTo("admin"), vehicleControllers.createVehicle)
+  .get(restrictTo("admin"), vehicleControllers.getAllVehicles);
 
-router.route("/:customer").get(vehicleControllers.getVehiclePerCustomer);
+router
+  .route("/:customer")
+  .get(restrictTo("admin"), vehicleControllers.getVehiclePerCustomer);
 
 router
   .route("/:id")
-  .get(vehicleControllers.getVehicle)
-  .patch(vehicleControllers.updateVehicle)
-  .delete(vehicleControllers.changeOwnership);
+  .get(restrictTo("admin"), vehicleControllers.getVehicle)
+  .patch(restrictTo("admin", "employee"), vehicleControllers.updateVehicle)
+  .delete(restrictTo("admin", "employee"), vehicleControllers.changeOwnership);
 
 export default router;
