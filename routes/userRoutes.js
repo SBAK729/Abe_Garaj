@@ -37,7 +37,7 @@ router.route("/me").get(me, getUser);
 router.use(restrictTo("admin"));
 
 router.route("/getAllEmployee").get(getAllEmployee);
-router.route("/").post(restrictTo("admin"), createUser).get(getAllUsers);
+router.route("/").post(createUser).get(getAllUsers);
 router.route("/:id").get(getUser).patch(updateUser).delete(deleteUser);
 
 export default router;
